@@ -6,7 +6,7 @@ A TypeScript library for easily interacting with Skrape.ai API. Define your scra
 
 - 🛡️ **Type-safe**: Define your schemas using Zod and get fully typed results
 - 🚀 **Simple API**: Just define a schema and get your data
-- 🧩 **Minimal Dependencies**: Requires Zod as a peer dependency and zod-to-json-schema as a dependency
+- 🧩 **Minimal Dependencies**
 
 ## Installation
 
