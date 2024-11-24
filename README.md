@@ -6,7 +6,7 @@ A TypeScript library for easily interacting with Skrape.ai API. Define your scra
 
 - **Type-safe**: Define your schemas using Zod and get fully typed results
 - **Simple API**: Just define a schema and get your data
-- **Lightweight**: Zero runtime dependencies (except for Zod)
+- **Minimal Dependencies**: Only requires Zod as a peer dependency
 - **Secure**: No API keys in your code, uses environment variables
 - **Flexible**: Support for JavaScript rendering and custom options
 
@@ -24,8 +24,19 @@ bun add skrape-js zod
 
 # Using pnpm
 pnpm add skrape-js zod
-
 ```
+
+Note: `zod` is a peer dependency and must be installed alongside `skrape-js`.
+
+## Environment Setup
+
+Create a `.env` file in your project root:
+
+```env
+SKRAPE_API_KEY=your_api_key_here
+```
+
+Make sure to add `.env` to your `.gitignore` to keep your API key secure.
 
 ## Quick Start
 
@@ -100,59 +111,61 @@ z.object({
   articles: z.array(
     z.object({
       title: z.string(),
-      tags: z.array(z.string()),
+      content: z.string(),
       metadata: z.object({
-        published: z.boolean(),
-        date: z.string().datetime(),
+        author: z.string(),
+        publishDate: z.string(),
       }),
     })
   ),
 });
-
-// Learn more at https://zod.dev
 ```
 
-## API Reference
+## API Options
 
-### `new Skrape(options)`
+When calling `extract()`, you can pass additional options:
 
-Creates a new Skrape client.
-
-Options:
-
-- `apiKey` (required): Your Skrape API key
-
-### `skrape.extract(url, schema, options?)`
-
-Extracts data from a URL according to the provided schema.
-
-Parameters:
-
-- `url`: The URL to scrape
-- `schema`: A Zod schema defining the data structure
-- `options`:
-  - `render_js`: Enable JavaScript rendering (default: false)
-
-Returns: A promise that resolves to the extracted data matching your schema.
+```typescript
+const result = await skrape.extract(url, schema, {
+  render_js: true, // Enable JavaScript rendering
+  wait_for: 2000, // Wait 2 seconds after page load
+  // ... other Skrape.ai options
+});
+```
 
 ## Error Handling
 
-The library throws `SkrapeError` instances with the following properties:
-
-- `message`: Error description
-- `status`: HTTP status code
-- `retryAfter`: Number of seconds to wait before retrying (for rate limit errors)
-
-Example error handling:
+The library throws typed errors that you can catch and handle:
 
 ```typescript
 try {
-  const data = await skrape.extract(url, schema);
+  const result = await skrape.extract(url, schema);
 } catch (error) {
-  if (error instanceof SkrapeError) {
-    console.log(error.message); // Error message
-    console.log(error.status); // HTTP status code
-    console.log(error.retryAfter); // Retry-After value if rate limited
+  if (error instanceof SkrapeValidationError) {
+    // Schema validation failed
+    console.error("Data doesn't match schema:", error.message);
+  } else if (error instanceof SkrapeAPIError) {
+    // API request failed
+    console.error("API error:", error.message);
   }
 }
 ```
+
+## TypeScript Support
+
+The library is written in TypeScript and provides full type inference. Your IDE will automatically show you the correct types based on your Zod schema:
+
+```typescript
+const schema = z.object({
+  title: z.string(),
+  count: z.number(),
+});
+
+const result = await skrape.extract(url, schema);
+// result.title is typed as string
+// result.count is typed as number
+```
+
+## License
+
+MIT

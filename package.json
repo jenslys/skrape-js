@@ -1,6 +1,6 @@
 {
   "name": "skrape-js",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A TypeScript library for easily interacting with Skrape.ai",
   "repository": {
     "url": "https://github.com/jenslys/skrape-js"
@@ -19,6 +19,9 @@
   },
   "author": "",
   "license": "MIT",
+  "dependencies": {
+    "zod-to-json-schema": "^3.22.4"
+  },
   "peerDependencies": {
     "zod": "^3.0.0"
   },
@@ -26,7 +29,6 @@
     "@types/node": "^20.0.0",
     "typescript": "^5.0.0",
     "zod": "^3.0.0",
-    "zod-to-json-schema": "^3.22.4",
     "@types/jest": "^29.0.0",
     "jest": "^29.0.0",
     "ts-jest": "^29.0.0",
