@@ -1,6 +1,6 @@
 {
   "name": "skrape-js",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A TypeScript library for easily interacting with Skrape.ai",
   "repository": {
     "url": "https://github.com/jenslys/skrape-js"
