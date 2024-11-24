@@ -1,33 +1,52 @@
-import { Skrape } from './index';
-import { z } from 'zod';
+import { Skrape, SkrapeError } from "./index";
+import { z } from "zod";
 
-// Define a test schema
-const testSchema = z.object({
-  title: z.string(),
-  description: z.string(),
-  price: z.number().optional(),
+const newsSchema = z.object({
+  topStories: z
+    .array(
+      z.object({
+        title: z.string(),
+        url: z.string(),
+        score: z.number(),
+        author: z.string(),
+        commentCount: z.number(),
+      })
+    )
+    .max(3),
 });
 
 async function test() {
+  if (!process.env.SKRAPE_API_KEY) {
+    console.error("Error: SKRAPE_API_KEY environment variable is not set");
+    process.exit(1);
+  }
+
   const skrape = new Skrape({
-    apiKey: process.env.SKRAPE_API_KEY || '',
-    baseUrl: process.env.SKRAPE_API_URL,
+    apiKey: process.env.SKRAPE_API_KEY,
+    baseUrl: "http://localhost:3000/api",
   });
 
   try {
     const result = await skrape.extract(
-      'https://example.com',
-      testSchema,
-      { render_js: true }
+      "https://news.ycombinator.com/",
+      newsSchema,
+      { render_js: false }
     );
-    
-    console.log('Success! Extracted data:', result);
+
+    console.log("Extracted data:", JSON.stringify(result, null, 2));
   } catch (error) {
-    console.error('Error:', error);
+    if (error instanceof SkrapeError) {
+      console.error(`Error ${error.status}: ${error.message}`);
+      if (error.retryAfter) {
+        console.error(`Rate limited. Retry after ${error.retryAfter} seconds`);
+      }
+    } else {
+      console.error("Unexpected error:", error);
+    }
+    process.exit(1);
   }
 }
 
-// Only run if this file is run directly
 if (require.main === module) {
   test();
 }

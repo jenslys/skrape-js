@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
 export interface SkrapeOptions {
   apiKey: string;
@@ -17,7 +17,7 @@ export class SkrapeError extends Error {
     public retryAfter?: number
   ) {
     super(message);
-    this.name = 'SkrapeError';
+    this.name = "SkrapeError";
   }
 }
 
@@ -26,8 +26,20 @@ export class Skrape {
   private readonly apiKey: string;
 
   constructor(options: SkrapeOptions) {
-    this.baseUrl = options.baseUrl || 'https://api.skrape.ai';
-    this.apiKey = options.apiKey;
+    this.baseUrl = options.baseUrl || "https://skrape.ai/api";
+    this.apiKey = options.apiKey.replace(/["']/g, "");
+  }
+
+  private convertToJsonSchema(schema: z.ZodType) {
+    const fullSchema = zodToJsonSchema(schema);
+    if (
+      typeof fullSchema === "object" &&
+      fullSchema.definitions &&
+      "Schema" in fullSchema.definitions
+    ) {
+      return fullSchema.definitions.Schema;
+    }
+    return fullSchema;
   }
 
   async extract<T extends z.ZodType>(
@@ -35,36 +47,46 @@ export class Skrape {
     schema: T,
     options?: ExtractOptions
   ): Promise<z.infer<T>> {
-    const jsonSchema = zodToJsonSchema(schema, { name: 'Schema' });
+    const jsonSchema = this.convertToJsonSchema(schema);
 
-    const response = await fetch(`${this.baseUrl}/extract`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url,
-        schema: jsonSchema,
-        options,
-      }),
-    });
+    try {
+      const response = await fetch(`${this.baseUrl}/extract`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          url,
+          schema: jsonSchema,
+          options,
+        }),
+      });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-      const retryAfter = response.headers.get('Retry-After');
-      
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new SkrapeError(
+          data.error || "Request failed",
+          response.status,
+          response.headers.get("Retry-After")
+            ? parseInt(response.headers.get("Retry-After")!, 10)
+            : undefined
+        );
+      }
+
+      return data.result as z.infer<T>;
+    } catch (error) {
+      if (error instanceof SkrapeError) {
+        throw error;
+      }
       throw new SkrapeError(
-        error.error || 'Request failed',
-        response.status,
-        retryAfter ? parseInt(retryAfter, 10) : undefined
+        error instanceof Error ? error.message : "Unknown error occurred",
+        500
       );
     }
-
-    const data = await response.json();
-    return data.result as z.infer<T>;
   }
 }
 
-// Export type utilities
 export type InferSkrapeSchema<T extends z.ZodType> = z.infer<T>;
