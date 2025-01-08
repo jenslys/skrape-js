@@ -7,6 +7,8 @@ A TypeScript library for easily interacting with Skrape.ai API. Define your scra
 - 🛡️ **Type-safe**: Define your schemas using Zod and get fully typed results
 - 🚀 **Simple API**: Just define a schema and get your data
 - 🧩 **Minimal Dependencies**
+- 📝 **Markdown Conversion**: Convert web pages to markdown
+- 🕷️ **Web Crawling**: Crawl websites with configurable depth and limits
 
 ## Installation
 
@@ -60,7 +62,7 @@ const newsSchema = z.object({
 const result = await skrape.extract(
   "https://news.ycombinator.com",
   newsSchema,
-  { render_js: false }
+  { renderJs: false }
 );
 
 console.log(result.topStories);
@@ -76,18 +78,83 @@ console.log(result.topStories);
 // ]
 ```
 
-## Schema Definition
+## Features
 
-We leverage [Zod](https://zod.dev) for defining schemas. For a comprehensive understanding of all available options and advanced schema configurations, we recommend exploring Zod's documentation.
+### Data Extraction
 
-## API Options
-
-When calling `extract()`, you can pass additional options:
+Extract structured data from any webpage using Zod schemas:
 
 ```typescript
-const result = await skrape.extract(url, schema, {
-  render_js: true, // Enable JavaScript rendering
+const productSchema = z.object({
+  name: z.string(),
+  price: z.number(),
+  description: z.string(),
 });
+
+const product = await skrape.extract("https://shop.com/product", productSchema);
+```
+
+### Markdown Conversion
+
+Convert a single web page to markdown:
+
+```typescript
+const markdown = await skrape.markdown(
+  "https://example.com",
+  { renderJs: true }
+);
+
+console.log(markdown);
+// # Example Page
+// 
+// This is the content...
+```
+
+Convert multiple web pages to markdown in bulk:
+
+```typescript
+const { jobId } = await skrape.markdown.bulk(
+  ["https://example.com", "https://example.org"],
+  { renderJs: true, callbackUrl: "https://webhook.site/callback" }
+);
+
+// Check job status
+const status = await skrape.getJobStatus(jobId);
+if (status.isCompleted) {
+  console.log(status.output);
+}
+```
+
+### Web Crawling
+
+Crawl websites with configurable options:
+
+```typescript
+const { jobId } = await skrape.crawl(
+  ["https://example.com"],
+  {
+    renderJs: true,
+    maxDepth: 3,
+    maxPages: 100,
+    maxLinks: 100,
+    linksOnly: false
+  }
+);
+
+// Check crawl results
+const status = await skrape.getJobStatus(jobId);
+if (status.isCompleted) {
+  console.log(status.output);
+}
+```
+
+### Health Check
+
+Check API health status:
+
+```typescript
+const health = await skrape.checkHealth();
+console.log(health.status); // 'healthy' | 'unhealthy'
 ```
 
 ## Error Handling
@@ -98,11 +165,11 @@ The library throws typed errors that you can catch and handle:
 try {
   const result = await skrape.extract(url, schema);
 } catch (error) {
-  if (error instanceof SkrapeValidationError) {
-    // Schema validation failed
-    console.error("Data doesn't match schema:", error.message);
-  } else if (error instanceof SkrapeAPIError) {
-    // API request failed
-    console.error("API error:", error.message);
+  if (error instanceof SkrapeError) {
+    console.error("Error:", error.message);
+    console.error("Status:", error.status);
+    if (error.retryAfter) {
+      console.error("Retry after:", error.retryAfter, "seconds");
+    }
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "skrape-js",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "TypeScript/Node.js SDK for the Skrape.ai API with type-safe schema validation",
   "repository": {
     "url": "https://github.com/jenslys/skrape-js"
