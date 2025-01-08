@@ -196,7 +196,7 @@ describe("Skrape", () => {
       callbackUrl: "https://webhook.site/callback",
     };
     const mockResponse = {
-      markdown: "# Example Page\n\nThis is a test page",
+      result: "# Example Page\n\nThis is a test page",
     };
 
     it("should make correct API request", async () => {
@@ -227,7 +227,7 @@ describe("Skrape", () => {
       });
 
       const result = await skrape.markdown(mockUrl, mockOptions);
-      expect(result).toBe(mockResponse.markdown);
+      expect(result).toBe(mockResponse.result);
     });
 
     it("should handle API errors", async () => {
